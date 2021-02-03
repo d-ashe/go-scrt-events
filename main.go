@@ -1,7 +1,7 @@
 package main
 
 import (
-	"get-scrt-events-go/cmd"
+	"github.com/secretanalytics/go-scrt-events/cmd"
 )
 
 func main() {

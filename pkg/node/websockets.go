@@ -9,7 +9,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 
-	"get-scrt-events-go/pkg/types"
+	"github.com/secretanalytics/go-scrt-events/pkg/types"
 )
 
 //WsRequest gets passed to websockets write()

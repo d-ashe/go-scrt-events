@@ -10,10 +10,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	c "get-scrt-events-go/config"
-	"get-scrt-events-go/pkg/node"
-	"get-scrt-events-go/pkg/types"
-	"get-scrt-events-go/pkg/db"
+	c "github.com/secretanalytics/go-scrt-events/config"
+	"github.com/secretanalytics/go-scrt-events/pkg/node"
+	"github.com/secretanalytics/go-scrt-events/pkg/types"
+	"github.com/secretanalytics/go-scrt-events/pkg/db"
 )
 
 var (

@@ -5,10 +5,10 @@ import (
 	"context"
 
 	"github.com/sirupsen/logrus"
-	"github.com/go-pg/pg"
-	"github.com/go-pg/pg/orm"
+	"github.com/go-pg/pg/v10"
+	"github.com/go-pg/pg/v10/orm"
 
-	"get-scrt-events-go/pkg/types"
+	"github.com/secretanalytics/go-scrt-events/pkg/types"
 )
 
 func insertBlock(db *pg.DB, block *types.BlockResultDB) {
