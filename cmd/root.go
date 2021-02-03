@@ -55,6 +55,7 @@ func run(dbConn, host, path string) {
 	db.GetHeights(dbSession, "secret-2")
 }
 
+
 func ScrtEventsCmd() *cobra.Command {
 	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		if err := setUpLogs(os.Stdout, v); err != nil {
