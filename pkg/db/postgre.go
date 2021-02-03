@@ -12,7 +12,7 @@ import (
 )
 
 func insertBlock(db *pg.DB, block *types.BlockResultDB) {
-	_, err := db.Model(block).Insert()
+	_, err := db.Model(block).InsertCascade()
 	if err != nil {
 		logrus.Fatal("Failed to insert block: ", err)
 		return
@@ -48,6 +48,7 @@ func createSchema(db *pg.DB) error {
     for _, model := range models {
         db.Model(model).CreateTable(&orm.CreateTableOptions{
 			Temp: false,
+			IfNotExists: true,
         })
     }
     return nil

@@ -1,13 +1,13 @@
 FROM golang:latest as build
 
-WORKDIR /go/src/get-scrt-events-go
+WORKDIR /go/src/go-scrt-events
 
 COPY . .
 
 RUN go get -d -v
 RUN go build 
 
-RUN chmod +x get-scrt-events-go
+RUN chmod +x go-scrt-events
 ENTRYPOINT [ "./go-scrt-events" ]
 
 CMD ["--config", "config.yml", "-v", "debug"]

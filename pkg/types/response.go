@@ -79,25 +79,25 @@ type BlockResult struct {
 
 //BlockResult is used to unmarshall JSONRPC responses
 type BlockResultDB struct {
-	tableName struct{} `pg:"blocks,alias:block"`
+	tableName struct{} `pg:"block_result"`
 
-	ID                    int    `pg:",pk"`
+	ID                    int    `pg:block_id",pk"`
 	ChainId               string
 
 	Height                int            
-	Txs                   []Tx              `pg:"rel:has-many,join_fk:id"`
-	BeginBlockEvents      []Event           `pg:"rel:has-many,join_fk:id"`
-	EndBlockEvents        []Event           `pg:"rel:has-many,join_fk:id"`
-	ValidatorUpdates      []ValidatorUpdate `pg:"rel:has-many,join_fk:id"`
+	Txs                   []Tx              `pg:"rel:has-many,join_fk:block_id"`
+	BeginBlockEvents      []Event           `pg:"rel:has-many,join_fk:block_id"`
+	EndBlockEvents        []Event           `pg:"rel:has-many,join_fk:block_id"`
+	ValidatorUpdates      []ValidatorUpdate `pg:"rel:has-many,join_fk:block_id"`
 	ConsensusParamUpdates json.RawMessage 
 }
 
 //Tx is used to unmarshall JSONRPC responses
 type Tx struct {
-	tableName struct{} `pg:"txs,alias:tx"`
+	tableName struct{} `pg:"tx_out"`
 
-	ID        int    `pg:",pk"`
-
+	ID        int    `pg:tx_id",pk"`
+	BlockId   uint64     `pg:block_id`
 	Code      int     `json:"code"`
 	CodeSpace string  `json:"codespace"`
 	Info      string  `json:"info"`
@@ -105,7 +105,7 @@ type Tx struct {
 	GasWanted string  `json:"gasWanted"`
 	GasUsed   string  `json:"gasUsed"`
 	Log       string  `json:"log"`
-	Events    []Event `json:"events" pg:"rel:has-many,join_fk:id"`
+	Events    []Event `json:"events" pg:"rel:has-many,join_fk:tx_id"`
 }
 
 //ValidatorUpdate is used to unmarshall JSONRPC responses
@@ -113,6 +113,7 @@ type ValidatorUpdate struct {
 	tableName struct{} `pg:"validator_updates,alias:validator_update"`
 	ID        int      `pg:",pk"`
 
+	BlockId   uint64     `pg:block_id`
 	PubKey PublicKey `json:"pub_key"`
 	Power  string    `json:"power"`
 }
@@ -125,8 +126,10 @@ type PublicKey struct {
 //Event is used to unmarshall JSONRPC responses
 type Event struct {
 	tableName struct{} `pg:"events,alias:event"`
-	ID        int      `pg:",pk"`
+	ID        int      `pg:e_id",pk"`
 
+	BlockId   uint64     `pg:block_id`
+	TxId   int     `pg:tx_id`
 	Type       string      `json:"type"`
 	Attributes []Attribute `json:"attributes"`
 }
