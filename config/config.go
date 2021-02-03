@@ -3,6 +3,7 @@ package config
 type Configurations struct {
 	Node    NodeConfigurations
 	Database DataBaseConfigurations
+	Enrichment EnrichmentConfigurations
 }
 
 type NodeConfigurations struct {
@@ -12,4 +13,8 @@ type NodeConfigurations struct {
 
 type DataBaseConfigurations struct {
 	Conn string
+}
+
+type EnrichmentConfigurations struct {
+	Run []string
 }
