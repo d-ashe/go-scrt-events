@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"sync"
+	//"sync"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
 	c "github.com/secretanalytics/go-scrt-events/config"
-	"github.com/secretanalytics/go-scrt-events/pkg/node"
-	"github.com/secretanalytics/go-scrt-events/pkg/types"
+	//"github.com/secretanalytics/go-scrt-events/pkg/node"
+	//"github.com/secretanalytics/go-scrt-events/pkg/types"
 	"github.com/secretanalytics/go-scrt-events/pkg/db"
 )
 
@@ -38,17 +38,23 @@ var (
 )
 
 func run(dbConn, host, path string) {
-	var wg sync.WaitGroup
-	blocks := make(chan types.BlockResultDB)
-	
+	//var wg sync.WaitGroup
+	//blocks := make(chan types.BlockResultDB)
+	dbSession := db.InitDB(dbConn)
+	logrus.Debug("Node host is: ", host)
+	logrus.Debug("DB conn string is: ", path)
+	/*
 	wg.Add(1)
 	go node.HandleWs(host, path, blocks, &wg)
 
 	wg.Add(1)
-	go db.InsertBlocks(dbConn, blocks, &wg)
+	go db.InsertBlocks(dbSession, blocks, &wg)
 
 	wg.Wait()
+	*/
+	db.GetHeights(dbSession, "secret-2")
 }
+
 func ScrtEventsCmd() *cobra.Command {
 	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		if err := setUpLogs(os.Stdout, v); err != nil {
