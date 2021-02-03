@@ -8,6 +8,6 @@ RUN go get -d -v
 RUN go build 
 
 RUN chmod +x get-scrt-events-go
-ENTRYPOINT [ "./get-scrt-events-go" ]
+ENTRYPOINT [ "./go-scrt-events" ]
 
 CMD ["--config", "config.yml", "-v", "debug"]

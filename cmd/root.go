@@ -21,7 +21,7 @@ var (
 	cfgFile string
 	v       string
 	rootCmd = &cobra.Command{
-		Use:   "scrt-events",
+		Use:   "go-scrt-events",
 		Short: "scrt-events quickly bootstraps a postgresql db with the Secret Network blockchain block-results.",
 		Long:  `scrt-events quickly bootstraps a postgresql db with the Secret Network blockchain block-results.`,
 		Run: func(cmd *cobra.Command, args []string) {
