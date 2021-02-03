@@ -73,8 +73,8 @@ type BlockResult struct {
 	Txs                   []Tx              `json:"txs_results"`
 	BeginBlockEvents      []Event           `json:"begin_block_events"`
 	EndBlockEvents        []Event           `json:"end_block_events"`
-	ValidatorUpdates      []ValidatorUpdate `json:"validator_updates"`
-	ConsensusParamUpdates json.RawMessage 
+	ValidatorUpdates      json.RawMessage   `json:"validator_updates"`
+	ConsensusParamUpdates json.RawMessage   `json:"consensus_param_updates"`
 }
 
 //BlockResult is used to unmarshall JSONRPC responses
@@ -88,7 +88,7 @@ type BlockResultDB struct {
 	Txs                   []Tx              `pg:"rel:has-many,join_fk:block_id"`
 	BeginBlockEvents      []Event           `pg:"rel:has-many,join_fk:block_id"`
 	EndBlockEvents        []Event           `pg:"rel:has-many,join_fk:block_id"`
-	ValidatorUpdates      []ValidatorUpdate `pg:"rel:has-many,join_fk:block_id"`
+	ValidatorUpdates      json.RawMessage 
 	ConsensusParamUpdates json.RawMessage 
 }
 
@@ -106,21 +106,6 @@ type Tx struct {
 	GasUsed   string  `json:"gasUsed"`
 	Log       string  `json:"log"`
 	Events    []Event `json:"events" pg:"rel:has-many,join_fk:tx_id"`
-}
-
-//ValidatorUpdate is used to unmarshall JSONRPC responses
-type ValidatorUpdate struct {
-	tableName struct{} `pg:"validator_updates,alias:validator_update"`
-	ID        int      `pg:",pk"`
-
-	BlockId   int     `pg:block_id`
-	PubKey PublicKey `json:"pub_key"`
-	Power  string    `json:"power"`
-}
-
-//PublicKey is used to unmarshall JSONRPC responses
-type PublicKey struct {
-	Data string `json:"data"`
 }
 
 //Event is used to unmarshall JSONRPC responses

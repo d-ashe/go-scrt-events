@@ -21,6 +21,7 @@ func insertBlock(db *pg.DB, block *types.BlockResultDB) {
 	if len(block.Txs) != 0 {
 		insertTxs(db, block)
 	}
+	insertEvents(db, block)
 }
 
 func insertTxs(db *pg.DB, block *types.BlockResultDB) {
@@ -45,10 +46,24 @@ func insertTxs(db *pg.DB, block *types.BlockResultDB) {
 
 func insertEvents(db *pg.DB, block *types.BlockResultDB) {
 	if len(block.BeginBlockEvents) != 0 {
-		insertTxs(db, block)
+		for _, ev := range block.BeginBlockEvents {
+			ev.BlockId = block.ID
+			_, errEv := db.Model(&ev).Insert()
+		    if errEv != nil {
+		    	logrus.Fatal("Failed to insert Event: ", errEv)
+		    	return
+		    }
+		}
 	}
 	if len(block.EndBlockEvents) != 0 {
-		insertTxs(db, block)
+		for _, ev := range block.EndBlockEvents {
+			ev.BlockId = block.ID
+			_, errEv := db.Model(&ev).Insert()
+		    if errEv != nil {
+		    	logrus.Fatal("Failed to insert Event: ", errEv)
+		    	return
+		    }
+		}
 	}
 }
 
@@ -73,7 +88,7 @@ func InsertBlocks(conn string, blocks chan types.BlockResultDB, wg *sync.WaitGro
 // createSchema creates database schema for Block, Tx, and Msg models.
 func createSchema(db *pg.DB) error {
     models := []interface{}{
-        (*types.BlockResultDB)(nil),
+		(*types.BlockResultDB)(nil),
 		(*types.Tx)(nil),
 		(*types.Event)(nil),
     }
