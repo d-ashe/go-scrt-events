@@ -79,7 +79,7 @@ type BlockResult struct {
 
 //BlockResult is used to unmarshall JSONRPC responses
 type BlockResultDB struct {
-	tableName struct{} `pg:"block_result"`
+	tableName struct{} `pg:"block"`
 
 	ID                    int    `pg:block_id",pk"`
 	ChainId               string
@@ -94,10 +94,10 @@ type BlockResultDB struct {
 
 //Tx is used to unmarshall JSONRPC responses
 type Tx struct {
-	tableName struct{} `pg:"tx_out"`
+	tableName struct{} `pg:"tx"`
 
 	ID        int    `pg:tx_id",pk"`
-	BlockId   uint64     `pg:block_id`
+	BlockId   int  `pg:block_id`
 	Code      int     `json:"code"`
 	CodeSpace string  `json:"codespace"`
 	Info      string  `json:"info"`
@@ -113,7 +113,7 @@ type ValidatorUpdate struct {
 	tableName struct{} `pg:"validator_updates,alias:validator_update"`
 	ID        int      `pg:",pk"`
 
-	BlockId   uint64     `pg:block_id`
+	BlockId   int     `pg:block_id`
 	PubKey PublicKey `json:"pub_key"`
 	Power  string    `json:"power"`
 }
@@ -125,10 +125,10 @@ type PublicKey struct {
 
 //Event is used to unmarshall JSONRPC responses
 type Event struct {
-	tableName struct{} `pg:"events,alias:event"`
+	tableName struct{} `pg:"events"`
 	ID        int      `pg:e_id",pk"`
 
-	BlockId   uint64     `pg:block_id`
+	BlockId   int     `pg:block_id`
 	TxId   int     `pg:tx_id`
 	Type       string      `json:"type"`
 	Attributes []Attribute `json:"attributes"`

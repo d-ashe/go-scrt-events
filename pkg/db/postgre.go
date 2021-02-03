@@ -12,12 +12,44 @@ import (
 )
 
 func insertBlock(db *pg.DB, block *types.BlockResultDB) {
-	_, err := db.Model(block).InsertCascade()
+	_, err := db.Model(block).Insert()
 	if err != nil {
 		logrus.Fatal("Failed to insert block: ", err)
 		return
 	}
-	logrus.Debug("Successful insert")
+	logrus.Debug("Successful insert of block")
+	if len(block.Txs) != 0 {
+		insertTxs(db, block)
+	}
+}
+
+func insertTxs(db *pg.DB, block *types.BlockResultDB) {
+	for _, tx := range block.Txs {
+		tx.BlockId = block.ID
+		_, errTx := db.Model(&tx).Insert()
+		if errTx != nil {
+			logrus.Fatal("Failed to insert Tx: ", errTx)
+			return
+		}
+		for _, ev := range tx.Events {
+			ev.TxId = tx.ID
+			ev.BlockId = block.ID
+			_, errEv := db.Model(&ev).Insert()
+		    if errEv != nil {
+		    	logrus.Fatal("Failed to insert Event: ", errEv)
+		    	return
+		    }
+		}
+	}
+}
+
+func insertEvents(db *pg.DB, block *types.BlockResultDB) {
+	if len(block.BeginBlockEvents) != 0 {
+		insertTxs(db, block)
+	}
+	if len(block.EndBlockEvents) != 0 {
+		insertTxs(db, block)
+	}
 }
 
 func InsertBlocks(conn string, blocks chan types.BlockResultDB, wg *sync.WaitGroup) {
@@ -43,6 +75,7 @@ func createSchema(db *pg.DB) error {
     models := []interface{}{
         (*types.BlockResultDB)(nil),
 		(*types.Tx)(nil),
+		(*types.Event)(nil),
     }
 
     for _, model := range models {
