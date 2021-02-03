@@ -1,0 +1,8 @@
+node:
+  host: "secret-2--rpc--full.datahub.figment.io"
+  path: "APIKEY"
+
+
+database:
+  conn: "postgres://postgres:postgrespassword@postgres:5432/postgres"
+
