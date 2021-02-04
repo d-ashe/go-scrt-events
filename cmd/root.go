@@ -50,12 +50,16 @@ func emitDone(done chan struct{}, blocksIn chan types.BlockResult, blocksOut cha
 				close(done)
 			}
 		default:
-			logrus.Debug("Not done")
+			logrus.Debug("Waiting to receive new blocks for insert")
 		}
 	}
 	wg.Done()
 }
 
+
+//emitHeights() is the main request generator for block results, 
+//Block heights available in db are compared to chaintip. 
+//Blocks needed to catch up are requested via websocket.
 func emitHeights(dbSession *pg.DB, chainTip int, heightsIn chan int, wg *sync.WaitGroup) {
 	//Checks for existence of block height in slice of heights
 	contains := func (checkFor int, inSlice []int) bool {
@@ -86,6 +90,14 @@ func emitHeights(dbSession *pg.DB, chainTip int, heightsIn chan int, wg *sync.Wa
 	wg.Done()
 }
 
+
+//run() is the main runner for go-scrt-events.
+//
+//Waitgroup of goroutines are started which:
+//InsertsBlocks() to postgresql
+//HandleWs() read/write to websocket
+//emitHeights() shares a channel with HandleWs() to determine which block heights to request.
+//emitDone() keeps track of results from websockets and postgresql, when all needed heights have been requested. Done is signaled. 
 func run(dbConn, host, path string) {
 	var wg sync.WaitGroup
 	heightsIn := make(chan int)
