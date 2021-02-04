@@ -117,56 +117,38 @@ func mergeRequests(reqs ...<-chan WsRequest) chan WsRequest {
     return out
 }
 
-func emitBlocks(blockReqs chan WsRequest, heightsIn chan int, wg *sync.WaitGroup) {
-	start := dbTip + 1
-	for i := range heightsIn {
-		params := []string{strconv.Itoa(i)}
-		blockReqs <- NewWsRequest("block_results", params)
-		if i > 100 {
-			break
+func emitBlocks(done chan struct{}, blockReqs chan WsRequest, heightsIn chan int, wg *sync.WaitGroup) {
+	for {
+		select {
+		case <-done:
+			return
+		case height := <- heightsIn:
+			params := []string{strconv.Itoa(height)}
+		    blockReqs <- NewWsRequest("block_results", params)
 		}
 	}
+	
 	wg.Done()
 }
 
-func emitDone(done chan struct{}, blocksIn chan types.BlockResult, blocksOut chan types.BlockResultDB, chainTip int, wg *sync.WaitGroup) {
-	for block := range blocksIn {
-		outBlock := block.DecodeBlock("secret-2")
-		blocksOut <- outBlock
-		if outBlock.Height == chainTip {
-			close(done)
-		}
-	}
-	wg.Done()
-}
-
-func iterBlocks(c *websocket.Conn, heightsIn chan int, dbTip int, blocksOut chan types.BlockResultDB) {
-	defer c.Close()
-	defer close(blocksOut)
-
-	var wg sync.WaitGroup
+func iterBlocks(c *websocket.Conn, done chan struct{}, heightsIn, chainTip chan int, blocksOut chan types.BlockResult, wg *sync.WaitGroup) {
 	chainTipReq := make(chan WsRequest)
 	blockReqs := make(chan WsRequest)
 
 	reqs := mergeRequests(chainTipReq, blockReqs)
-	blocks := make(chan types.BlockResult)
-	chainTip := make(chan int)
-	done := make(chan struct{})
+
 	wg.Add(1)
-	go read(c, blocks, chainTip, done, &wg)
+	go read(c, blocksOut, chainTip, done, wg)
 	wg.Add(1)
-	go write(c, reqs, done, &wg)
+	go write(c, reqs, done, wg)
 	var params []string
 	chainTipReq <- NewWsRequest("status", params)
-	close(chainTipReq)
-	close(chainTip)
-	logrus.Info("Latest height is ", latestHeight)
+	
 	wg.Add(1)
-	go emitBlocks(blockReqs, heightsIn, &wg)
-	wg.Wait()
+	go emitBlocks(done, blockReqs, heightsIn, wg)
 }
 
-func HandleWs(host, path string, blocks chan types.BlockResultDB, wg *sync.WaitGroup) {
+func HandleWs(done chan struct{}, host, path string, heightsIn, chainTip chan int, blocksOut chan types.BlockResult, wg *sync.WaitGroup) {
 	u := url.URL{Scheme: "ws", Host: host, Path: path}
 	logrus.Debug("connecting to", u.String())
 
@@ -174,7 +156,7 @@ func HandleWs(host, path string, blocks chan types.BlockResultDB, wg *sync.WaitG
 	if err != nil {
 		logrus.Fatal("dial:", err)
 	}
-	dbTip := 0
-	iterBlocks(c, dbTip, blocks)
+
+	iterBlocks(c, done, heightsIn, chainTip, blocksOut, wg)
 	wg.Done()
 }

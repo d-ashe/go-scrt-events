@@ -45,7 +45,7 @@ func insertTxs(db *pg.DB, block *types.BlockResultDB) {
 }
 
 func insertEvents(db *pg.DB, block *types.BlockResultDB) {
-	insertEventList := func(eventsList []Event) {
+	insertEventList := func(eventsList []types.Event) {
 		if len(eventsList) != 0 {
 			for _, ev := range eventsList {
 				ev.BlockId = block.ID
@@ -60,10 +60,15 @@ func insertEvents(db *pg.DB, block *types.BlockResultDB) {
 	insertEventList(block.EndBlockEvents)
 }
 
-func InsertBlocks(db *pg.DB, blocks chan types.BlockResultDB, wg *sync.WaitGroup) {
+func InsertBlocks(done chan struct{}, db *pg.DB, blocks chan types.BlockResultDB, wg *sync.WaitGroup) {
 	defer db.Close()
-	for block := range blocks {
-		insertBlock(db, &block)
+	for {
+		select {
+		case <-done:
+			return
+		case block := <- blocks:
+			insertBlock(db, &block)
+		}
 	}
 	wg.Done()
 }
