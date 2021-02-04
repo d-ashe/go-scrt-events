@@ -40,13 +40,11 @@ var (
 	}
 )
 
-func emitDone(done chan struct{}, blocksIn chan types.BlockResult, blocksOut chan types.BlockResultDB, chainTip int, wg *sync.WaitGroup) {
+func emitDone(done chan struct{}, blocksIn chan types.BlockResultDB, chainTip int, wg *sync.WaitGroup) {
 	for {
 		select {
 		case block := <- blocksIn:
-			outBlock := block.DecodeBlock("secret-2")
-		    blocksOut <- outBlock
-		    if outBlock.Height == chainTip {
+		    if block.Height == chainTip {
 				close(done)
 			}
 		default:
@@ -59,7 +57,7 @@ func emitDone(done chan struct{}, blocksIn chan types.BlockResult, blocksOut cha
 
 //emitHeights() is the main request generator for block results, 
 //Block heights available in db are compared to chaintip. 
-//Blocks needed to catch up are requested via websocket.
+//Blocks heights needed to sent in heightsIn channel to HandleWs()
 func emitHeights(dbSession *pg.DB, chainTip int, heightsIn chan int, wg *sync.WaitGroup) {
 	//Checks for existence of block height in slice of heights
 	contains := func (checkFor int, inSlice []int) bool {
@@ -101,7 +99,7 @@ func emitHeights(dbSession *pg.DB, chainTip int, heightsIn chan int, wg *sync.Wa
 func run(dbConn, host, path string) {
 	var wg sync.WaitGroup
 	heightsIn := make(chan int)
-	blocksOutWeb := make(chan types.BlockResult)
+	blocksOutWeb := make(chan types.BlockResultDB)
 	blocksOutDB := make(chan types.BlockResultDB)
 
 
@@ -114,7 +112,7 @@ func run(dbConn, host, path string) {
 	
 
 	wg.Add(1)
-	go db.InsertBlocks(done, dbSession, blocksOutDB, &wg)
+	go db.InsertBlocks(done, dbSession, blocksOutWeb, blocksOutDB, &wg)
 
 	wg.Add(1)
 	go node.HandleWs(done, host, path, heightsIn, chainTip, blocksOutWeb, &wg)
@@ -128,8 +126,7 @@ func run(dbConn, host, path string) {
 	go emitHeights(dbSession, latestHeight, heightsIn, &wg)
 
 	wg.Add(1)
-	go emitDone(done, blocksOutWeb, blocksOutDB, latestHeight, &wg)
-
+	go emitDone(done, blocksOutDB, latestHeight, &wg)
 
 	wg.Wait()
 

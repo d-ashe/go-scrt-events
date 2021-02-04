@@ -60,14 +60,17 @@ func insertEvents(db *pg.DB, block *types.BlockResultDB) {
 	insertEventList(block.EndBlockEvents)
 }
 
-func InsertBlocks(done chan struct{}, db *pg.DB, blocks chan types.BlockResultDB, wg *sync.WaitGroup) {
+//InsertBlocks receives blocks via blocks channel from HandleWs websocket.
+//
+func InsertBlocks(done chan struct{}, db *pg.DB, blocksIn chan types.BlockResultDB, blocksOut chan types.BlockResultDB, wg *sync.WaitGroup) {
 	defer db.Close()
 	for {
 		select {
 		case <-done:
 			return
-		case block := <- blocks:
+		case block := <- blocksIn:
 			insertBlock(db, &block)
+			blocksOut <- block
 		}
 	}
 	wg.Done()

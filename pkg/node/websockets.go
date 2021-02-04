@@ -25,7 +25,7 @@ func NewWsRequest(endpoint string, reqParams []string) WsRequest {
 	return WsRequest{JSONRPC: "2.0", Method: endpoint, Params: reqParams, ID: 1}
 }
 
-func read(c *websocket.Conn, blocks chan types.BlockResult, chainTip chan int, done chan struct{}, wg *sync.WaitGroup) {
+func read(c *websocket.Conn, blocksOut chan types.BlockResultDB, chainTip chan int, done chan struct{}, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for {
 		select {
@@ -51,8 +51,10 @@ func read(c *websocket.Conn, blocks chan types.BlockResult, chainTip chan int, d
 		    	if errBlock != nil {
 		    		logrus.Fatal("Failed to unmarshall Result to BlockResult:", errBlock)
 		    	}
-		    	logrus.Debug(blockOut)
-		    	blocks <- blockOut
+				outBlock := blockOut.DecodeBlock("secret-2")
+				logrus.Debug(outBlock)
+
+		    	blocksOut <- outBlock
 		    }
 		    _, checkStatus := checkMap["sync_info"]
 		    if checkStatus {
@@ -131,7 +133,7 @@ func emitBlocks(done chan struct{}, blockReqs chan WsRequest, heightsIn chan int
 	wg.Done()
 }
 
-func iterBlocks(c *websocket.Conn, done chan struct{}, heightsIn, chainTip chan int, blocksOut chan types.BlockResult, wg *sync.WaitGroup) {
+func iterBlocks(c *websocket.Conn, done chan struct{}, heightsIn, chainTip chan int, blocksOut chan types.BlockResultDB, wg *sync.WaitGroup) {
 	chainTipReq := make(chan WsRequest)
 	blockReqs := make(chan WsRequest)
 
@@ -148,7 +150,7 @@ func iterBlocks(c *websocket.Conn, done chan struct{}, heightsIn, chainTip chan 
 	go emitBlocks(done, blockReqs, heightsIn, wg)
 }
 
-func HandleWs(done chan struct{}, host, path string, heightsIn, chainTip chan int, blocksOut chan types.BlockResult, wg *sync.WaitGroup) {
+func HandleWs(done chan struct{}, host, path string, heightsIn, chainTip chan int, blocksOut chan types.BlockResultDB, wg *sync.WaitGroup) {
 	u := url.URL{Scheme: "ws", Host: host, Path: path}
 	logrus.Debug("connecting to", u.String())
 
