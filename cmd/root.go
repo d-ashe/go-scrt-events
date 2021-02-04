@@ -47,8 +47,6 @@ func emitDone(done chan struct{}, blocksIn chan types.BlockResultDB, chainTip in
 		    if block.Height == chainTip {
 				close(done)
 			}
-		default:
-			logrus.Debug("Waiting to receive new blocks for insert")
 		}
 	}
 	wg.Done()
@@ -68,17 +66,26 @@ func emitHeights(dbSession *pg.DB, chainTip int, heightsIn chan int, wg *sync.Wa
 		}
 		return false
 	}
-	//If no heights for given chain-id then start at 1, else sort ints and start loop at lowest
+
+	
 	heights := db.GetHeights(dbSession, "secret-2")
 	//Loop from dbTip to chainTip, if height i not contained in heights, request for block_results at height i will be made
-	for i := 1; i <= chainTip; i++ {
-		if contains(i, heights) {
-			logrus.Debug("Heights contain block ", i)
-		} else {
-			heightsIn <- i
-			logrus.Debug("Requesting height ", i)
+
+	var wgInner sync.WaitGroup
+
+	checkOut := func (checkFor int) {
+		defer wgInner.Done()
+		if contains(checkFor, heights) == false {
+			heightsIn <- checkFor
+			logrus.Debug("Requesting height ", checkFor)
 		}
 	}
+
+	for i := 1; i <= chainTip; i++ {
+		wgInner.Add(1)
+		go checkOut(i)
+	}
+	wgInner.Wait()
 	close(heightsIn)
 	wg.Done()
 }

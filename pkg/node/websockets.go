@@ -52,7 +52,7 @@ func read(c *websocket.Conn, blocksOut chan types.BlockResultDB, chainTip chan i
 		    		logrus.Fatal("Failed to unmarshall Result to BlockResult:", errBlock)
 		    	}
 				outBlock := blockOut.DecodeBlock("secret-2")
-				logrus.Debug(outBlock)
+				logrus.Debug("Got block at height ", outBlock.Height)
 
 		    	blocksOut <- outBlock
 		    }
