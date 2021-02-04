@@ -45,26 +45,20 @@ func insertTxs(db *pg.DB, block *types.BlockResultDB) {
 }
 
 func insertEvents(db *pg.DB, block *types.BlockResultDB) {
-	if len(block.BeginBlockEvents) != 0 {
-		for _, ev := range block.BeginBlockEvents {
-			ev.BlockId = block.ID
-			_, errEv := db.Model(&ev).Insert()
-		    if errEv != nil {
-		    	logrus.Fatal("Failed to insert Event: ", errEv)
-		    	return
-		    }
+	insertEventList := func(eventsList []Event) {
+		if len(eventsList) != 0 {
+			for _, ev := range eventsList {
+				ev.BlockId = block.ID
+				_, errEv := db.Model(&ev).Insert()
+				if errEv != nil {
+					logrus.Fatal("Failed to insert Event: ", errEv)
+					return
+				}
+			}
 		}
 	}
-	if len(block.EndBlockEvents) != 0 {
-		for _, ev := range block.EndBlockEvents {
-			ev.BlockId = block.ID
-			_, errEv := db.Model(&ev).Insert()
-		    if errEv != nil {
-		    	logrus.Fatal("Failed to insert Event: ", errEv)
-		    	return
-		    }
-		}
-	}
+	insertEventList(block.BeginBlockEvents)
+	insertEventList(block.EndBlockEvents)
 }
 
 func InsertBlocks(db *pg.DB, blocks chan types.BlockResultDB, wg *sync.WaitGroup) {
