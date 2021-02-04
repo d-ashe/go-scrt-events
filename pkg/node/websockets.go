@@ -171,7 +171,7 @@ func iterBlocks(c *websocket.Conn, dbTip int, blocksOut chan types.BlockResultDB
 }
 
 func HandleWs(host, path string, blocks chan types.BlockResultDB, wg *sync.WaitGroup) {
-	u := url.URL{Scheme: "wss", Host: host, Path: path}
+	u := url.URL{Scheme: "ws", Host: host, Path: path}
 	logrus.Debug("connecting to", u.String())
 
 	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)

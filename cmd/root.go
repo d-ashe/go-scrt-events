@@ -4,15 +4,16 @@ import (
 	"fmt"
 	"io"
 	"os"
-	//"sync"
+	"sync"
+	"sort"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
 	c "github.com/secretanalytics/go-scrt-events/config"
-	//"github.com/secretanalytics/go-scrt-events/pkg/node"
-	//"github.com/secretanalytics/go-scrt-events/pkg/types"
+	"github.com/secretanalytics/go-scrt-events/pkg/node"
+	"github.com/secretanalytics/go-scrt-events/pkg/types"
 	"github.com/secretanalytics/go-scrt-events/pkg/db"
 )
 
@@ -37,21 +38,71 @@ var (
 	}
 )
 
+func emitDone(done chan struct{}, heightsIn chan int, blocksOut chan types.BlockResultDB, chainTip int, wg *sync.WaitGroup) {
+	//Checks for existence of block height in slice of heights
+	contains := func (checkFor int, inSlice []int) bool {
+		for i := range inSlice {
+			if i == checkFor {
+				return true
+			}
+		}
+		return false
+	}
+	//If no heights for given chain-id then start at 1, else sort ints and start loop at lowest
+	heights := db.GetHeights(dbSession, "secret-2")
+	if len(heights) == 0 {
+		start := 1
+	} else {
+		sort.Ints(heights)
+		start := heights[0]
+	}
+	//Loop from dbTip to chainTip, if height i not contained in heights, request for block_results at height i will be made
+	for i := start; i <= chainTip; i++ {
+		if contains(i, heights) {
+			logrus.Debug("Heights contain block ", i)
+		} else {
+			heightsIn <- i
+			logrus.Debug("Requesting height ", i)
+		}
+	}
+
+	//Loop over received blocks channel, if received block == chaintip, signal done
+	for block := range blocksIn {
+		outBlock := block.DecodeBlock("secret-2")
+		blocksOut <- outBlock
+		if outBlock.Height == chainTip {
+			close(done)
+		}
+	}
+	wg.Done()
+}
+
+
 func run(dbConn, host, path string) {
-	//var wg sync.WaitGroup
-	//blocks := make(chan types.BlockResultDB)
+	var wg sync.WaitGroup
+	heightsIn := make(chan int)
+	blocksOut := make(chan types.BlockResultDB)
+
+	chainTip := make(chan int)
+	done := make(chan struct{})
+
 	dbSession := db.InitDB(dbConn)
 	logrus.Debug("Node host is: ", host)
-	logrus.Debug("DB conn string is: ", path)
-	/*
+
 	wg.Add(1)
 	go node.HandleWs(host, path, blocks, &wg)
+
+	latestHeight := <- chainTip
+	close(chainTip)
+
+	wg.Add(1)
+	go emitDone(done, heightsIn, blocksOut, latestHeight, &wg)
 
 	wg.Add(1)
 	go db.InsertBlocks(dbSession, blocks, &wg)
 
 	wg.Wait()
-	*/
+	
 	db.GetHeights(dbSession, "secret-2")
 }
 
