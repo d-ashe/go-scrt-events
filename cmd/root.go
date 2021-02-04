@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 	"sync"
-	"sort"
+
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -70,13 +70,8 @@ func emitHeights(dbSession *pg.DB, chainTip int, heightsIn chan int, wg *sync.Wa
 	}
 	//If no heights for given chain-id then start at 1, else sort ints and start loop at lowest
 	heights := db.GetHeights(dbSession, "secret-2")
-	start := 1
-	if len(heights) != 0 {
-		sort.Ints(heights)
-		start = heights[0]
-	} 
 	//Loop from dbTip to chainTip, if height i not contained in heights, request for block_results at height i will be made
-	for i := start; i <= chainTip; i++ {
+	for i := 1; i <= chainTip; i++ {
 		if contains(i, heights) {
 			logrus.Debug("Heights contain block ", i)
 		} else {
