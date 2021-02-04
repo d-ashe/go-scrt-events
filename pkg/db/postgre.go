@@ -52,7 +52,6 @@ func insertEvents(db *pg.DB, block *types.BlockResultDB) {
 				_, errEv := db.Model(&ev).Insert()
 				if errEv != nil {
 					logrus.Fatal("Failed to insert Event: ", errEv)
-					return
 				}
 			}
 		}

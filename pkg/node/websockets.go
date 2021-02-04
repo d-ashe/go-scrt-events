@@ -117,9 +117,9 @@ func mergeRequests(reqs ...<-chan WsRequest) chan WsRequest {
     return out
 }
 
-func emitBlocks(blockReqs chan WsRequest, blocks chan types.BlockResult, chainTip, dbTip int, wg *sync.WaitGroup) {
+func emitBlocks(blockReqs chan WsRequest, heightsIn chan int, wg *sync.WaitGroup) {
 	start := dbTip + 1
-	for i := start; i <= chainTip; i++ {
+	for i := range heightsIn {
 		params := []string{strconv.Itoa(i)}
 		blockReqs <- NewWsRequest("block_results", params)
 		if i > 100 {
@@ -140,7 +140,7 @@ func emitDone(done chan struct{}, blocksIn chan types.BlockResult, blocksOut cha
 	wg.Done()
 }
 
-func iterBlocks(c *websocket.Conn, dbTip int, blocksOut chan types.BlockResultDB) {
+func iterBlocks(c *websocket.Conn, heightsIn chan int, dbTip int, blocksOut chan types.BlockResultDB) {
 	defer c.Close()
 	defer close(blocksOut)
 
@@ -159,14 +159,10 @@ func iterBlocks(c *websocket.Conn, dbTip int, blocksOut chan types.BlockResultDB
 	var params []string
 	chainTipReq <- NewWsRequest("status", params)
 	close(chainTipReq)
-	
-	latestHeight := <- chainTip
 	close(chainTip)
 	logrus.Info("Latest height is ", latestHeight)
 	wg.Add(1)
-	go emitBlocks(blockReqs, blocks, latestHeight, dbTip, &wg)
-	wg.Add(1)
-	go emitDone(done, blocks, blocksOut, 100, &wg)
+	go emitBlocks(blockReqs, heightsIn, &wg)
 	wg.Wait()
 }
 
