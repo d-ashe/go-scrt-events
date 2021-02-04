@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"sync"
+	"runtime"
 
 
 	"github.com/sirupsen/logrus"
@@ -55,7 +56,7 @@ func emitDone(done chan struct{}, blocksIn chan types.BlockResultDB, chainTip in
 
 //emitHeights() is the main request generator for block results, 
 //Block heights available in db are compared to chaintip. 
-//Blocks heights needed to sent in heightsIn channel to HandleWs()
+//Blocks heights needed to catch-up sent in heightsIn channel to HandleWs()
 func emitHeights(dbSession *pg.DB, chainTip int, heightsIn chan int, wg *sync.WaitGroup) {
 	//Checks for existence of block height in slice of heights
 	contains := func (checkFor int, inSlice []int) bool {
@@ -99,6 +100,7 @@ func emitHeights(dbSession *pg.DB, chainTip int, heightsIn chan int, wg *sync.Wa
 //emitHeights() shares a channel with HandleWs() to determine which block heights to request.
 //emitDone() keeps track of results from websockets and postgresql, when all needed heights have been requested. Done is signaled. 
 func run(dbConn, host, path string) {
+	runtime.GOMAXPROCS(8)
 	var wg sync.WaitGroup
 	heightsIn := make(chan int)
 	blocksOutWeb := make(chan types.BlockResultDB)
