@@ -2,7 +2,11 @@ FROM golang:latest as build
 
 WORKDIR /go/src/go-scrt-events
 
+RUN useradd -m dev
+
 COPY . .
+RUN chown -R dev:dev /go/src/go-scrt-events
+USER dev
 
 RUN go get -d -v
 RUN go build 

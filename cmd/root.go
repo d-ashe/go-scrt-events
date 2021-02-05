@@ -32,8 +32,8 @@ var (
 			if err != nil {
 				logrus.Error("Unable to decode into config struct, %v", err)
 			}
-			dbConn := os.Getenv("DATABASE_URL")
-			run(dbConn, configuration.Node.Host, configuration.Node.Path)
+			//dbConn := os.Getenv("DATABASE_URL")
+			run(configuration.Database.Conn, configuration.Node.Host, configuration.Node.Path)
 		},
 	}
 )
@@ -70,10 +70,10 @@ func emitHeights(dbSession *pg.DB, chainTip int, heightsIn chan int, wg *sync.Wa
 	heights := db.GetHeights(dbSession, "secret-2")
 	//Loop from dbTip to chainTip, if height i not contained in heights, request for block_results at height i will be made
 
-	var wgInner sync.WaitGroup
+	//var wgInner sync.WaitGroup
 
 	checkOut := func (checkFor int) {
-		defer wgInner.Done()
+		//defer wgInner.Done()
 		if contains(checkFor, heights) == false {
 			heightsIn <- checkFor
 			//logrus.Debug("Requesting height ", checkFor)
@@ -81,10 +81,10 @@ func emitHeights(dbSession *pg.DB, chainTip int, heightsIn chan int, wg *sync.Wa
 	}
 
 	for i := 1; i <= chainTip; i++ {
-		wgInner.Add(1)
-		go checkOut(i)
+		//wgInner.Add(1)
+		checkOut(i)
 	}
-	wgInner.Wait()
+	//wgInner.Wait()
 	close(heightsIn)
 	wg.Done()
 }
