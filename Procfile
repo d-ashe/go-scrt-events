@@ -1,0 +1,1 @@
+worker: bin/go-scrt-events --config config.yml -v debug

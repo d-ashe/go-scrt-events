@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -31,7 +32,8 @@ var (
 			if err != nil {
 				logrus.Error("Unable to decode into config struct, %v", err)
 			}
-			run(configuration.Database.Conn, configuration.Node.Host, configuration.Node.Path)
+			dbConn := os.Getenv("DATABASE_URL")
+			run(dbConn, configuration.Node.Host, configuration.Node.Path)
 		},
 	}
 )
@@ -96,6 +98,7 @@ func emitHeights(dbSession *pg.DB, chainTip int, heightsIn chan int, wg *sync.Wa
 //emitHeights() shares a channel with HandleWs() to determine which block heights to request.
 //emitDone() keeps track of results from websockets and postgresql, when all needed heights have been requested. Done is signaled. 
 func run(dbConn, host, path string) {
+	time.Sleep(10 * time.Second)
 	dbSession := db.InitDB(dbConn)
 	wsConn := node.InitWs(host, path)
 	defer wsConn.Close()
