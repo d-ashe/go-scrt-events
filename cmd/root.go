@@ -5,14 +5,11 @@ import (
 	"io"
 	"os"
 	"sync"
-	"runtime"
-
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/go-pg/pg/v10"
-
 
 	c "github.com/secretanalytics/go-scrt-events/config"
 	"github.com/secretanalytics/go-scrt-events/pkg/node"
@@ -32,10 +29,8 @@ var (
 			var configuration c.Configurations
 			err := viper.Unmarshal(&configuration)
 			if err != nil {
-				logrus.Error("Unable to decode into struct, %v", err)
+				logrus.Error("Unable to decode into config struct, %v", err)
 			}
-			logrus.Debug("Node host is: ", configuration.Node.Host)
-			logrus.Debug("DB conn string is: ", configuration.Database.Conn)
 			run(configuration.Database.Conn, configuration.Node.Host, configuration.Node.Path)
 		},
 	}
@@ -46,6 +41,7 @@ func emitDone(done chan struct{}, blocksIn chan types.BlockResultDB, chainTip in
 		select {
 		case block := <- blocksIn:
 		    if block.Height == chainTip {
+				logrus.Info("SIGNALING DONE - CHAINTIP REACHED")
 				close(done)
 			}
 		}
@@ -78,7 +74,7 @@ func emitHeights(dbSession *pg.DB, chainTip int, heightsIn chan int, wg *sync.Wa
 		defer wgInner.Done()
 		if contains(checkFor, heights) == false {
 			heightsIn <- checkFor
-			logrus.Debug("Requesting height ", checkFor)
+			//logrus.Debug("Requesting height ", checkFor)
 		}
 	}
 
@@ -100,40 +96,38 @@ func emitHeights(dbSession *pg.DB, chainTip int, heightsIn chan int, wg *sync.Wa
 //emitHeights() shares a channel with HandleWs() to determine which block heights to request.
 //emitDone() keeps track of results from websockets and postgresql, when all needed heights have been requested. Done is signaled. 
 func run(dbConn, host, path string) {
-	runtime.GOMAXPROCS(8)
-	var wg sync.WaitGroup
-	heightsIn := make(chan int)
-	blocksOutWeb := make(chan types.BlockResultDB)
-	blocksOutDB := make(chan types.BlockResultDB)
-
-
-	chainTip := make(chan int)
-	done := make(chan struct{})
-
 	dbSession := db.InitDB(dbConn)
-	logrus.Debug("Node host is: ", host)
-
-	
-
-	wg.Add(1)
-	go db.InsertBlocks(done, dbSession, blocksOutWeb, blocksOutDB, &wg)
-
-	wg.Add(1)
-	go node.HandleWs(done, host, path, heightsIn, chainTip, blocksOutWeb, &wg)
-	
-
-    latestHeight := <- chainTip
-	logrus.Info("Latest height is ", latestHeight)
-
-	wg.Add(1)
-	logrus.Info("Emitting heights to fetch")
-	go emitHeights(dbSession, latestHeight, heightsIn, &wg)
-
-	wg.Add(1)
-	go emitDone(done, blocksOutDB, latestHeight, &wg)
-
-	wg.Wait()
-
+	wsConn := node.InitWs(host, path)
+	defer wsConn.Close()
+	for {
+	    var wg sync.WaitGroup
+	    heightsIn := make(chan int)
+	    blocksOutWeb := make(chan types.BlockResultDB)
+	    blocksOutDB := make(chan types.BlockResultDB)
+    
+	    chainTip := make(chan int)
+	    done := make(chan struct{})
+    
+	    logrus.Debug("Node host is: ", host)
+    
+	    wg.Add(1)
+	    go db.InsertBlocks(done, dbSession, blocksOutWeb, blocksOutDB, &wg)
+    
+	    wg.Add(1)
+	    go node.HandleWs(wsConn, done, heightsIn, chainTip, blocksOutWeb, &wg)
+	    
+        latestHeight := <- chainTip
+	    logrus.Info("Latest height is ", latestHeight)
+    
+	    wg.Add(1)
+	    logrus.Info("Emitting heights to fetch")
+	    go emitHeights(dbSession, latestHeight, heightsIn, &wg)
+    
+	    wg.Add(1)
+	    go emitDone(done, blocksOutDB, latestHeight, &wg)
+    
+		wg.Wait()
+	}
 }
 
 

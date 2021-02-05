@@ -45,15 +45,13 @@ func read(c *websocket.Conn, blocksOut chan types.BlockResultDB, chainTip chan i
 		    json.Unmarshal(response.RespResult, &checkMap)
 		    _, checkBlockResult := checkMap["begin_block_events"]
 		    if checkBlockResult {
-		    	logrus.Debug("Response is BlockResult")
 		    	var blockOut types.BlockResult
 		    	errBlock := json.Unmarshal(response.RespResult, &blockOut)
 		    	if errBlock != nil {
 		    		logrus.Fatal("Failed to unmarshall Result to BlockResult:", errBlock)
 		    	}
 				outBlock := blockOut.DecodeBlock("secret-2")
-				logrus.Debug("Got block at height ", outBlock.Height)
-
+				logrus.Debug("Response is BlockResult ",  outBlock.Height)
 		    	blocksOut <- outBlock
 		    }
 		    _, checkStatus := checkMap["sync_info"]
@@ -84,7 +82,7 @@ func write(c *websocket.Conn, reqs chan WsRequest, done chan struct{}, wg *sync.
 			if err != nil {
 				logrus.Fatal("write:", err)
 			}
-			logrus.Debug("Request Made->", msg)
+			//logrus.Debug("Request Made->", msg)
 		case <-done:
 			logrus.Info("Channel done closed")
 			// Cleanly close the connection by sending a close message and then
@@ -120,6 +118,7 @@ func mergeRequests(reqs ...<-chan WsRequest) chan WsRequest {
 }
 
 func emitBlocks(done chan struct{}, blockReqs chan WsRequest, heightsIn chan int, wg *sync.WaitGroup) {
+	defer wg.Done()
 	for {
 		select {
 		case <-done:
@@ -129,8 +128,6 @@ func emitBlocks(done chan struct{}, blockReqs chan WsRequest, heightsIn chan int
 		    blockReqs <- NewWsRequest("block_results", params)
 		}
 	}
-	
-	wg.Done()
 }
 
 func iterBlocks(c *websocket.Conn, done chan struct{}, heightsIn, chainTip chan int, blocksOut chan types.BlockResultDB, wg *sync.WaitGroup) {
@@ -150,7 +147,7 @@ func iterBlocks(c *websocket.Conn, done chan struct{}, heightsIn, chainTip chan 
 	go emitBlocks(done, blockReqs, heightsIn, wg)
 }
 
-func HandleWs(done chan struct{}, host, path string, heightsIn, chainTip chan int, blocksOut chan types.BlockResultDB, wg *sync.WaitGroup) {
+func InitWs(host, path string) *websocket.Conn {
 	u := url.URL{Scheme: "ws", Host: host, Path: path}
 	logrus.Debug("connecting to", u.String())
 
@@ -158,7 +155,9 @@ func HandleWs(done chan struct{}, host, path string, heightsIn, chainTip chan in
 	if err != nil {
 		logrus.Fatal("dial:", err)
 	}
+	return c
+}
 
+func HandleWs(c *websocket.Conn, done chan struct{}, heightsIn, chainTip chan int, blocksOut chan types.BlockResultDB, wg *sync.WaitGroup) {
 	iterBlocks(c, done, heightsIn, chainTip, blocksOut, wg)
-	wg.Done()
 }
