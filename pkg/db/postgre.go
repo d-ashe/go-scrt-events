@@ -45,33 +45,33 @@ func insertTxs(db *pg.DB, block *types.BlockResultDB) {
 }
 
 func insertEvents(db *pg.DB, block *types.BlockResultDB) {
-	if len(block.BeginBlockEvents) != 0 {
-		for _, ev := range block.BeginBlockEvents {
-			ev.BlockId = block.ID
-			_, errEv := db.Model(&ev).Insert()
-		    if errEv != nil {
-		    	logrus.Fatal("Failed to insert Event: ", errEv)
-		    	return
-		    }
+	insertEventList := func(eventsList []types.Event) {
+		if len(eventsList) != 0 {
+			for _, ev := range eventsList {
+				ev.BlockId = block.ID
+				_, errEv := db.Model(&ev).Insert()
+				if errEv != nil {
+					logrus.Fatal("Failed to insert Event: ", errEv)
+				}
+			}
 		}
 	}
-	if len(block.EndBlockEvents) != 0 {
-		for _, ev := range block.EndBlockEvents {
-			ev.BlockId = block.ID
-			_, errEv := db.Model(&ev).Insert()
-		    if errEv != nil {
-		    	logrus.Fatal("Failed to insert Event: ", errEv)
-		    	return
-		    }
-		}
-	}
+	insertEventList(block.BeginBlockEvents)
+	insertEventList(block.EndBlockEvents)
 }
 
-func InsertBlocks(conn string, blocks chan types.BlockResultDB, wg *sync.WaitGroup) {
-	db := initDB(conn)
+//InsertBlocks receives blocks via blocks channel from HandleWs websocket.
+//
+func InsertBlocks(done chan struct{}, db *pg.DB, blocksIn chan types.BlockResultDB, blocksOut chan types.BlockResultDB, wg *sync.WaitGroup) {
 	defer db.Close()
-	for block := range blocks {
-		insertBlock(db, &block)
+	for {
+		select {
+		case <-done:
+			return
+		case block := <- blocksIn:
+			insertBlock(db, &block)
+			blocksOut <- block
+		}
 	}
 	wg.Done()
 }
@@ -103,7 +103,7 @@ func createSchema(db *pg.DB) error {
 }
 
 
-func initDB(conn string) *pg.DB {
+func InitDB(conn string) *pg.DB {
 	//Parse the connection string
 	opt, err := pg.ParseURL(conn)
     if err != nil {
