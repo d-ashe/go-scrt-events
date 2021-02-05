@@ -1,6 +1,6 @@
 module github.com/secretanalytics/go-scrt-events
 
-go 1.11
+go 1.15
 
 require (
 	github.com/go-pg/pg/v10 v10.7.5
