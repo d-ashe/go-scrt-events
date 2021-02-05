@@ -32,8 +32,8 @@ var (
 			if err != nil {
 				logrus.Error("Unable to decode into config struct, %v", err)
 			}
-			//dbConn := os.Getenv("DATABASE_URL")
-			run(configuration.Database.Conn, configuration.Node.Host, configuration.Node.Path)
+			dbConn := os.Getenv("DATABASE_URL")
+			run(dbConn, configuration.Node.Host, configuration.Node.Path)
 		},
 	}
 )
