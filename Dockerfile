@@ -1,17 +1,19 @@
-FROM golang:latest as build
+FROM golang:1.15-buster as builder
 
-WORKDIR /go/src/go-scrt-events
+WORKDIR /app
 
-RUN useradd -m dev
+COPY go.* ./
+RUN go mod download
 
-COPY . .
-RUN chown -R dev:dev /go/src/go-scrt-events
-USER dev
+COPY . ./
 
-RUN go get -d -v
-RUN go build 
+RUN go build -mod=readonly -v -o server
 
-RUN chmod +x go-scrt-events
-ENTRYPOINT [ "./go-scrt-events" ]
+FROM debian:buster-slim
+RUN set -x && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
-CMD ["--config", "config.yml", "-v", "debug"]
+COPY --from=builder /app/server /app/server
+
+CMD [ "/app/go-scrt-events" ]
