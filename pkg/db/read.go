@@ -25,3 +25,9 @@ func GetHeights(db *pg.DB, chainId string) []int {
 	logrus.Info(heights)
 	return heights
 }
+
+func QueryTxLogs(db *pg.DB, chainId , matchOn string) []types.Tx {
+	var txs []types.Tx
+	err := db.Model((*types.Tx)(nil)).
+	Where("chain_id = ? AND log LIKE '%?'", chainId).
+}
