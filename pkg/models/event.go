@@ -9,7 +9,7 @@ import (
 //Event is used to unmarshall JSONRPC responses
 type Event struct {
 	Id          int        `json:"id"`
-	BlockId     int        `json:"block_id"`
+	BlockId     string        `json:"block_id"`
 	TxId        int        `json:"tx_id"`
 	Type        string     `json:"type"`
 	Attributes []Attribute `json:"attributes"`
@@ -46,19 +46,20 @@ func (attr *Attribute) decodeAttribute() (attrOut Attribute){
 	return attrOut
 }
 
-func (ev *Event) decodeEventAttributes() (evOut Event){
+func (ev *Event) decodeEvent(blockIdIn string) (evOut Event){
 	var attrsOut []Attribute
 	for _, x := range ev.Attributes {
         attrsOut = append(attrsOut, x.decodeAttribute())
 	}
 	evOut.Attributes = attrsOut
 	evOut.Type = ev.Type
+	evOut.BlockId = blockIdIn
 	return evOut
 }
 
-func decodeEventList(encEvents []Event) (decEvents []Event) {
+func decodeEventList(encEvents []Event, blockIdIn string) (decEvents []Event) {
 	for _, x := range encEvents {
-        decEvents = append(decEvents, x.decodeEventAttributes())
+        decEvents = append(decEvents, x.decodeEvent(blockIdIn))
 	}
 	return decEvents
 }

@@ -9,7 +9,7 @@ import (
 //Tx is used to unmarshall JSONRPC responses
 type Tx struct {
 	ID        int     `json:"id""`
-	BlockId   int     `json:block_id`
+	BlockId   string  `json:block_id`
 	Code      int     `json:"code"`
 	CodeSpace string  `json:"codespace"`
 	Info      string  `json:"info"`

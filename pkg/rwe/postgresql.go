@@ -152,50 +152,7 @@ func createSchema(db *pg.DB) error {
     return nil
 }
 
-
-func InitDB(conn string) *pg.DB {
-	//Parse the connection string
-	opt, err := pg.ParseURL(conn)
-    if err != nil {
-       panic(err)
-	}
-	//Connect to the db
-	db := pg.Connect(opt)
-	
-	
-	ctx := context.Background()
-
-	//Check if db is up
-	if errUp := db.Ping(ctx); errUp != nil {
-		logrus.Fatal(errUp)
-		logrus.Fatal("Failed to ping database")
-		panic(errUp)
-	}
-
-	//Create the schema
-	errSchema := createSchema(db)
-    if errSchema != nil {
-		logrus.Fatal(errSchema)
-		logrus.Fatal("Failed to create schema")
-        panic(errSchema)
-	}
-
-	//Query version
-	var version string
-    _, errVer := db.QueryOneContext(ctx, pg.Scan(&version), "SELECT version()")
-    if errVer != nil {
-		logrus.Fatal(errVer)
-		logrus.Fatal("Failed to check version")
-		panic(errVer)
-	}
-	
-	logrus.Info("Connected to Postgresql with version: ", version)
-
-	createSchema(db)
-	return db
-}
-
-//GetHeights
+//QueryHeights
 //Params
 //chainId string -> Chain id to query for 
 //Returns
