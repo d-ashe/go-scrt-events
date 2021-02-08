@@ -6,10 +6,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-
 //BlockResult is used to unmarshall JSONRPC responses for block_results?height={n} endpoint
 type BlockResult struct {
 	Height                string            `json:"height"`
+	BlockId               string            `json:"block_id"`
 	Txs                   []Tx              `json:"txs_results"`
 	BeginBlockEvents      []Event           `json:"begin_block_events"`
 	EndBlockEvents        []Event           `json:"end_block_events"`
