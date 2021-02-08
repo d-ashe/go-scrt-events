@@ -6,8 +6,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
-	"github.com/d-ashe/Seraph/pkg/rwe"
-	"github.com/d-ashe/Seraph/pkg/web"
+	"github.com/secretanalytics/go-scrt-events/pkg/rwe"
+	"github.com/secretanalytics/go-scrt-events/pkg/web"
 )
 
 //GetStatus requests status? endpoint via websocket, 
