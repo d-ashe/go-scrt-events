@@ -1,0 +1,14 @@
+steps:
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/secret-analytics/events', '.']
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'gcr.io/secret-analytics/events']
+
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: gcloud
+  args: ['run', 'deploy', 'scrt-events', '--image', 'gcr.io/secret-analytics/events', '--region' 'europe-west1', '--platform', 'managed']
+
+images:
+- gcr.io/secret-analytics/events
