@@ -21,28 +21,12 @@ type BlockResult struct {
 	ConsensusParamUpdates json.RawMessage   `json:"consensus_param_updates"`
 }
 
-func (bl *BlockResult) Publish(ctx context.Context, topic pubsub.Topic) {
+func (bl *BlockResult) publish(ctx context.Context, topic pubsub.Topic) {
 	block := bl.DecodeBlock("secret-2")
 	pubBlock, _ := json.Marshal(block)
 	topic.Publish(ctx, &pubsub.Message{Data: pubBlock})
 }
 
-/*
-//func emitDone(done chan struct{}, blocksIn chan types.BlockResultDB, chainTip int, wg *sync.WaitGroup) {
-	for {
-		select {
-		case block := <- blocksIn:
-		    if block.Height == chainTip {
-				logrus.Info("SIGNALING DONE - CHAINTIP REACHED")
-				close(done)
-			}
-		}
-	}
-	wg.Done()
-}
-///
-///
-*/
 func PublishBlocks(projectID, topicName string, heights int[]) {
 	var wg sync.WaitGroup
 	dataIn := make(chan json.RawMessage)
@@ -59,6 +43,7 @@ func PublishBlocks(projectID, topicName string, heights int[]) {
 		for x := range pubBlocks {
 			var block BlockResult
 			json.Unmarshal(x, &block)
+			block.publish(ctx, topic)
 		}
 		close(done)
 	}

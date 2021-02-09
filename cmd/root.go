@@ -12,8 +12,6 @@ import (
 	"github.com/spf13/viper"
 	"github.com/go-pg/pg/v10"
 
-	c "github.com/secretanalytics/go-scrt-events/config"
-	"github.com/secretanalytics/go-scrt-events/pkg/node"
 	"github.com/secretanalytics/go-scrt-events/pkg/types"
 	"github.com/secretanalytics/go-scrt-events/pkg/db"
 )
@@ -27,12 +25,7 @@ var (
 		Short: "scrt-events quickly bootstraps a postgresql db with the Secret Network blockchain block-results.",
 		Long:  `scrt-events quickly bootstraps a postgresql db with the Secret Network blockchain block-results.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			var configuration c.Configurations
-			err := viper.Unmarshal(&configuration)
-			if err != nil {
-				logrus.Error("Unable to decode into config struct, %v", err)
-			}
-			run(configuration.Database.Conn, configuration.Node.Host, configuration.Node.Path)
+			run()
 		},
 	}
 )
@@ -96,7 +89,7 @@ func emitHeights(dbSession *pg.DB, chainTip int, heightsIn chan int, wg *sync.Wa
 //HandleWs() read/write to websocket
 //emitHeights() shares a channel with HandleWs() to determine which block heights to request.
 //emitDone() keeps track of results from websockets and postgresql, when all needed heights have been requested. Done is signaled. 
-func run(dbConn, host, path string) {
+func run() {
 	time.Sleep(10 * time.Second)
 	dbSession := db.InitDB(dbConn)
 	wsConn := node.InitWs(host, path)

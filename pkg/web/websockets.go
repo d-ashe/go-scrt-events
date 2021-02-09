@@ -78,6 +78,7 @@ func emitBlocks(blockReqs chan WsRequest, heightsIn []int, wg *sync.WaitGroup) {
 		params := []string{strconv.Itoa(x)}
 		blockReqs <- NewWsRequest("block_results", params)
 		}
+	close(blockReqs)
 }
 
 func iterRequests(done chan struct{}, c *websocket.Conn, requestsIn chan WsRequest, responsesOut chan json.RawMessage, wg *sync.WaitGroup) {
