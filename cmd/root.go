@@ -12,6 +12,8 @@ import (
 	"github.com/spf13/viper"
 	"github.com/go-pg/pg/v10"
 
+	c "github.com/secretanalytics/go-scrt-events/config"
+
 )
 
 var (
@@ -23,6 +25,11 @@ var (
 		Short: "scrt-events quickly bootstraps a postgresql db with the Secret Network blockchain block-results.",
 		Long:  `scrt-events quickly bootstraps a postgresql db with the Secret Network blockchain block-results.`,
 		Run: func(cmd *cobra.Command, args []string) {
+			var configuration c.Configurations
+			err := viper.Unmarshal(&configuration)
+			if err != nil {
+				logrus.Error("Unable to decode into config struct, %v", err)
+			}
 			run()
 		},
 	}
@@ -132,7 +139,6 @@ func ScrtEventsCmd() *cobra.Command {
 		return nil
 	}
 	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.scrt-events/config.json)")
 	rootCmd.PersistentFlags().StringVarP(&v, "verbosity", "v", logrus.WarnLevel.String(), "Log level (debug, info, warn, error, fatal, panic")
 
 	return rootCmd
@@ -148,18 +154,25 @@ func setUpLogs(out io.Writer, level string) error {
 	return nil
 }
 
-func initConfig() {
-	// Don't forget to read config either from cfgFile or from home directory!
-	if cfgFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
-	} else {
-		// Search config in home directory with name ".cobra" (without extension).
-		viper.AddConfigPath("$HOME/.scrt-events")
-		viper.SetConfigName("config.yml")
+func bindEnvVarToConf(conf, envVar string) {
+	err = viper.BindEnv(conf, envVar)
+    if err != nil {
+		log := "Failed to bind env var" + envVar + conf
+        logrus.Fatal(log)
 	}
+}
 
+func initConfig() {
 	viper.AutomaticEnv()
+
+	bindEnvVarToConf("node.host", "NODE_HOST")
+	bindEnvVarToConf("node.path", "WS_PATH")
+
+	bindEnvVarToConf("database.conn", "DB_CONN")
+
+	bindEnvVarToConf("pubsub.projectid", "PUBSUB_PROJECT_ID")
+	bindEnvVarToConf("pubsub.topicname", "PUBSUB_TOPIC_NAME")
+
 
 	if err := viper.ReadInConfig(); err != nil {
 		fmt.Println("Can't read config:", err)

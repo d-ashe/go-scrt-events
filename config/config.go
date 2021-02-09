@@ -4,6 +4,7 @@ type Configurations struct {
 	Node    NodeConfigurations
 	Database DataBaseConfigurations
 	Enrichment EnrichmentConfigurations
+	Pubsub PubSubConfigurations
 }
 
 type NodeConfigurations struct {
@@ -17,4 +18,9 @@ type DataBaseConfigurations struct {
 
 type EnrichmentConfigurations struct {
 	Run []string
+}
+
+type PubSubConfigurations struct {
+	ProjectId string
+	TopicName string
 }
