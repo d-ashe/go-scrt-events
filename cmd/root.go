@@ -12,8 +12,6 @@ import (
 	"github.com/spf13/viper"
 	"github.com/go-pg/pg/v10"
 
-	"github.com/secretanalytics/go-scrt-events/pkg/types"
-	"github.com/secretanalytics/go-scrt-events/pkg/db"
 )
 
 var (

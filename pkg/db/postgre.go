@@ -8,7 +8,6 @@ import (
 	"github.com/go-pg/pg/v10"
 	"github.com/go-pg/pg/v10/orm"
 
-	"github.com/secretanalytics/go-scrt-events/pkg/types"
 )
 
 func insertBlock(db *pg.DB, block *types.BlockResultDB) {
