@@ -28,6 +28,11 @@ var (
 			if err != nil {
 				logrus.Error("Unable to decode into config struct, %v", err)
 			}
+			var testHeights []int
+			for i := 0; i < 100; i++ {
+				append(testHeights, i)
+			}
+			models.PublishBlocks(testHeights)
 		},
 	}
 )
@@ -40,14 +45,12 @@ func ScrtEventsCmd() *cobra.Command {
 		return nil
 	}
 	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVarP(&v, "verbosity", "v", logrus.WarnLevel.String(), "Log level (debug, info, warn, error, fatal, panic")
-
 	return rootCmd
 }
 
-func setUpLogs(out io.Writer, level string) error {
+func setUpLogs(out io.Writer) error {
 	logrus.SetOutput(out)
-	lvl, err := logrus.ParseLevel(level)
+	lvl, err := logrus.ParseLevel("debug")
 	if err != nil {
 		return err
 	}

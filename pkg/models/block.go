@@ -7,6 +7,8 @@ import (
 	"encoding/json" 
 
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
+
 	"cloud.google.com/go/pubsub"
 )
 
@@ -27,13 +29,13 @@ func (bl *BlockResult) publish(ctx context.Context, topic pubsub.Topic) {
 	topic.Publish(ctx, &pubsub.Message{Data: pubBlock})
 }
 
-func PublishBlocks(projectID, topicName string, heights int[]) {
+func PublishBlocks(heights int[]) {
 	var wg sync.WaitGroup
 	dataIn := make(chan json.RawMessage)
 	pubBlocks := make(chan json.RawMessage)
 	done := make(chan struct{})
 	//ctx context.Context, topic pubsub.Topic, done chan struct{}, dataIn chan json.RawMessage, wg *sync.WaitGroup
-	ctx, _, topic := rwe.InitTopic(projectID, topicName)
+	ctx, _, topic := rwe.InitTopic(viper.Get("pubsub_project_id", viper.Get("pubsub_topic_name"))
 	wg.Add(1)
 	go web.IterBlocks(done, heights, pubBlocks, &wg)
 	wg.Wait(1)
