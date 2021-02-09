@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-type TaskMsg struct {
+type PubSubMsg struct {
 	Type    string            `json:"type"`
 	Msg     json.RawMessage   `json:"heights"`
 }
@@ -30,7 +30,7 @@ type GatherBlocksMsg {
 	ChainId string  `json:"chain_id"`
 }
 
-type ChainTipMsg {
+type DistributeGatherBlocksMsg {
 	ChainTip  int  `json:"chain_tip"`
 	ChainId string  `json:"chain_id"`
 }

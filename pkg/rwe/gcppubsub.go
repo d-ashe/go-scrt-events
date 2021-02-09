@@ -65,7 +65,7 @@ func Receive(ctx context.Context, sub pubsub.Subscription, done chan struct{}, d
 	}
 }
 
-func Publish(ctx context.Context, topic pubsub.Topic, done chan struct{}, dataIn chan json.RawMessage, wg *sync.WaitGroup) {
+func Publish(ctx context.Context, topic pubsub.Topic, dataOut json.RawMessage) {
 	defer wg.Done()
 	defer topic.Stop()
 	for {
@@ -74,6 +74,7 @@ func Publish(ctx context.Context, topic pubsub.Topic, done chan struct{}, dataIn
 			return
 		case dataPub := <-dataIn:
 			res := topic.Publish(ctx, &pubsub.Message{Data: dataPub})
+			dataOut <- dataPub
 		}
 	}
 }

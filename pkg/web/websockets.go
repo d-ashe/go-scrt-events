@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"encoding/json"
 
+	"github.com/spf13/viper"
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 
@@ -80,6 +81,7 @@ func emitBlocks(blockReqs chan WsRequest, heightsIn []int, wg *sync.WaitGroup) {
 }
 
 func iterRequests(done chan struct{}, c *websocket.Conn, requestsIn chan WsRequest, responsesOut chan json.RawMessage, wg *sync.WaitGroup) {
+	defer wg.Done()
 	wg.Add(1)
 	go read(done, c, blocksOut, wg)
 
@@ -87,9 +89,11 @@ func iterRequests(done chan struct{}, c *websocket.Conn, requestsIn chan WsReque
 	go write(done, c, reqs, wg)
 }
 
-func iterBlocks(done chan struct{}, c *websocket.Conn, heightsIn []int, blocksOut chan json.RawMessage, wg *sync.WaitGroup) {
+func IterBlocks(done chan struct{}, heightsIn []int, blocksOut chan json.RawMessage, wg *sync.WaitGroup) {
+	defer wg.Done()
+	c := initWs(viper.Get("node_host"), viper.Get("node_path"))
 	blockReqs := make(chan WsRequest)
-
+	wg.Add(1)
 	go iterRequests(done, c, blockReqs, blocksOut, wg)
 
 	wg.Add(1)
